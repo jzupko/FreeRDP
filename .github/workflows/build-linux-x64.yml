@@ -1,0 +1,112 @@
+name: 'Linux build'
+
+on:
+  push:
+    branches: [ master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+    - uses: actions/checkout@v4
+    - run: |
+        sudo apt-get update
+        sudo apt-get install -y \
+          libxrandr-dev \
+          libxinerama-dev \
+          libusb-1.0-0-dev \
+          xserver-xorg-dev \
+          libswscale-dev \
+          libswresample-dev \
+          libavutil-dev \
+          libavcodec-dev \
+          libcups2-dev \
+          libpulse-dev \
+          libasound2-dev \
+          libpcsclite-dev \
+          xsltproc \
+          libxml2-dev \
+          libxcb-cursor-dev \
+          libxcursor-dev \
+          libcairo2-dev \
+          libfaad-dev \
+          libgsm1-dev \
+          ninja-build \
+          libxfixes-dev \
+          libxkbcommon-dev \
+          libxkbfile-dev \
+          libwayland-dev \
+          libpam0g-dev \
+          libxdamage-dev \
+          libxcb-damage0-dev \
+          libxtst-dev \
+          libfuse3-dev \
+          libsystemd-dev \
+          libsoxr-dev \
+          libsdl2-dev \
+          libsdl2-ttf-dev \
+          libsdl2-image-dev \
+          docbook-xsl \
+          libkrb5-dev \
+          libcjson-dev \
+          libpkcs11-helper1-dev \
+          libwebkit2gtk-4.1-dev \
+          libopus-dev \
+          libwebp-dev \
+          libpng-dev \
+          libjpeg-dev \
+          liburiparser-dev \
+          libssl-dev \
+          opensc-pkcs11 \
+          libv4l-dev \
+          cmake \
+          clang
+        cmake -GNinja \
+          -B ci-build \
+          -S . \
+          -DCMAKE_VERBOSE_MAKEFILE=ON \
+          -DCMAKE_BUILD_TYPE:STRING=Release \
+          -DWITH_FREERDP_DEPRECATED_COMMANDLINE=OFF \
+          -DCHANNEL_TSMF:BOOL=OFF \
+          -DCHANNEL_URBDRC:BOOL=ON \
+          -DBUILD_TESTING:BOOL=OFF \
+          -DWITH_MANPAGES:BOOL=OFF \
+          -DWITH_KRB5:BOOL=ON \
+          -DWITH_PCSC:BOOL=ON \
+          -DWITH_CLIENT_SDL2:BOOL=ON \
+          -DWITH_SDL_IMAGE_DIALOGS:BOOL=ON \
+          -DWITH_INTERNAL_MD4:BOOL=ON \
+          -DWITH_INTERNAL_MD5:BOOL=ON \
+          -DWITH_INTERNAL_RC4:BOOL=ON \
+          -DWITH_PKCS11:BOOL=ON \
+          -DWITH_SWSCALE:BOOL=ON \
+          -DWITH_SERVER:BOOL=OFF \
+          -DWITH_SAMPLE:BOOL=OFF \
+          -DWITH_SHADOW:BOOL=OFF \
+          -DWITH_CUPS:BOOL=ON \
+          -DWITH_OPUS:BOOL=ON \
+          -DWITH_FUSE:BOOL=OFF \
+          -DWITH_FFMPEG:BOOL=ON \
+          -DWITH_WAYLAND:BOOL=OFF \
+          -DWITH_WINPR_UTILS_IMAGE_PNG:BOOL=ON \
+          -DWITH_WINPR_UTILS_IMAGE_WEBP:BOOL=ON \
+          -DWITH_WINPR_UTILS_IMAGE_JPEG:BOOL=ON \
+          -DWITH_URIPARSER:BOOL=ON \
+          -DWITH_DSP_FFMPEG:BOOL=ON \
+          -DWITH_OSS:BOOL=OFF \
+          -DWITH_WEBVIEW:BOOL=OFF \
+          -DWITH_PULSE:BOOL=ON \
+          -DWITH_X11:BOOL=ON \
+          -DCMAKE_INSTALL_PREFIX=/tmp/ci-build \
+          -DCMAKE_C_COMPILER=/usr/bin/clang \
+          -DCMAKE_CXX_COMPILER=/usr/bin/clang++
+        cmake --build ci-build --parallel $(nproc) --target install
+    - name: Package
+      run: (cd /tmp/ci-build && tar -cvf ${GITHUB_WORKSPACE}/linux-x64.tar .)
+    - name: Archive
+      uses: actions/upload-artifact@v4
+      with:
+        name: linux-x64.tar
+        path: linux-x64.tar
+        if-no-files-found: error
+        compression-level: 9
